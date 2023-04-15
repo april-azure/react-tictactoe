@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 function checkWinner(cellData) {
   const checkSeq = [
@@ -26,7 +26,11 @@ function checkWinner(cellData) {
       return cellData[seq[0][0]][seq[0][1]];
     }
   }
-  return null;
+  return isDraw(cellData) ? 'DRAW' : null;
+}
+
+function isDraw(cellData) {
+  return cellData.every(row => row.every(cell => cell != null));
 }
 
 export default function Game() {
@@ -38,15 +42,33 @@ export default function Game() {
       [null, null, null]
     ]
   );
-  // manage history
+  const [history, setHistory] = useState([cellData.slice()]);
+  const [curMove, setCurMove] = useState(0);
 
-  const onPlay = (newCellData, nextPlayer) => {
+  function onPlay(newCellData, nextPlayer) {
     setCellData(newCellData);
+    let nextHistory = history.slice(0, curMove + 1);
+    nextHistory.push(newCellData);
+    setHistory(nextHistory);
+    setCurMove(curMove + 1);
     setCurPlayer(nextPlayer);
   }
 
+  function jumpTo(i) {
+    setCurMove(i);
+    setCurPlayer(i % 2 == 0 ? 'X' : 'O');
+    setCellData(history[i]);
+  }
+
   return (
-    <Board cellData={cellData} onPlay={onPlay} curPlayer={curPlayer} />
+    <>
+      <Board cellData={cellData} onPlay={onPlay} curPlayer={curPlayer} />
+      {history.map((record, i) => {
+        if (i == 0)
+          return <button key={i} onClick={() => jumpTo(i)}>Game Start</button>
+        return <button key={i} onClick={() => jumpTo(i)}>Move {i}</button>
+      })}
+    </>
   );
 }
 
@@ -56,6 +78,10 @@ function Board({
   onPlay,
 }) {
   const [winner, setWinner] = useState(checkWinner(cellData));
+  useEffect(() => {
+    setWinner(checkWinner(cellData));
+  }, [cellData]);
+
 
   const handleOnClick = (i, j) => {
     if (winner != null) return;
@@ -66,7 +92,6 @@ function Board({
       newCellData[i][j] = curPlayer;
       nextPlayer = curPlayer == 'X' ? 'O' : 'X';
     }
-    setWinner(checkWinner(newCellData));
     onPlay(newCellData, nextPlayer);
   }
 
@@ -85,9 +110,16 @@ function Board({
     )
   });
 
+  function getWinnerText() {
+    if (winner == null) return null;
+
+    if (winner == 'DRAW') return 'Draw';
+    else return 'The winner is: ' + winner;
+  }
+
   return (
     <>
-      {winner && (<div className="row">winner is : {winner}</div>)}
+      {winner && (<div className="row">{getWinnerText()}</div>)}
       {cells}
     </>
   );
