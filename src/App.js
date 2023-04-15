@@ -34,7 +34,7 @@ function isDraw(cellData) {
 }
 
 export default function Game() {
-  const [curPlayer, setCurPlayer] = useState('X');
+  // const [curPlayer, setCurPlayer] = useState('X');
   const [cellData, setCellData] = useState(
     [
       [null, null, null],
@@ -51,14 +51,14 @@ export default function Game() {
     nextHistory.push(newCellData);
     setHistory(nextHistory);
     setCurMove(curMove + 1);
-    setCurPlayer(nextPlayer);
   }
 
   function jumpTo(i) {
     setCurMove(i);
-    setCurPlayer(i % 2 == 0 ? 'X' : 'O');
     setCellData(history[i]);
   }
+
+  const curPlayer = curMove % 2 == 0 ? 'X' : 'O';
 
   return (
     <>
@@ -77,14 +77,8 @@ function Board({
   curPlayer,
   onPlay,
 }) {
-  const [winner, setWinner] = useState(checkWinner(cellData));
-  useEffect(() => {
-    setWinner(checkWinner(cellData));
-  }, [cellData]);
-
-
   const handleOnClick = (i, j) => {
-    if (winner != null) return;
+    if (checkWinner(cellData)) return;
 
     const newCellData = cellData.map(row => row.slice());
     let nextPlayer = curPlayer;
@@ -110,16 +104,17 @@ function Board({
     )
   });
 
-  function getWinnerText() {
-    if (winner == null) return null;
-
-    if (winner == 'DRAW') return 'Draw';
-    else return 'The winner is: ' + winner;
+  const winner = checkWinner(cellData);
+  let status = 'Current Player: ' + curPlayer;
+  if (winner == 'DRAW') {
+    status = 'Game End: Draw';
+  } else if (winner) {
+    status = 'The winner is: ' + winner;
   }
 
   return (
     <>
-      {winner && (<div className="row">{getWinnerText()}</div>)}
+      <div className="row">{status}</div>
       {cells}
     </>
   );
